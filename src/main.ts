@@ -1,8 +1,10 @@
 import {
+    MarkdownView,
     Plugin,
     Vault,
     Workspace,
     WorkspaceLeaf,
+    Notice
   } from 'obsidian';
 import MindmapView from './mindmap-view';
 import { MM_VIEW_TYPE } from './constants';
@@ -32,7 +34,7 @@ import { MindMapSettingsTab } from './settings-tab';
       this.registerView(
         MM_VIEW_TYPE,
         (leaf: WorkspaceLeaf) =>
-          (this.mindmapView = new MindmapView(this.settings, leaf, {path:this.activeLeafPath(this.workspace), basename: this.activeLeafName(this.workspace)}))
+          (this.mindmapView = new MindmapView(this.settings, leaf, this.workspace.getActiveViewOfType(MarkdownView)))
       );
 
       this.addCommand({
@@ -47,31 +49,23 @@ import { MindMapSettingsTab } from './settings-tab';
     }
 
     markMapPreview() {
-      const fileInfo = {path: this.activeLeafPath(this.workspace), basename: this.activeLeafName(this.workspace)};
-      this.initPreview(fileInfo);
+      const view = this.workspace.getActiveViewOfType(MarkdownView);
+      if (!view) new Notice('Unsupported file to preview, must be MarkdownView');
+      this.initPreview(view);
     }
 
-    async initPreview(fileInfo: any) {
+    initPreview(view: MarkdownView | null) {
       if (this.app.workspace.getLeavesOfType(MM_VIEW_TYPE).length > 0) {
+        new Notice('Only a single mind map is supported at a time');
         return;
       }
-      const preview = this.app.workspace.splitActiveLeaf(this.settings.splitDirection);
-      const mmPreview = new MindmapView(this.settings, preview, fileInfo);
+      if (!view) return;
+      const preview = this.app.workspace.getLeaf('split', this.settings.splitDirection);
+      const mmPreview = new MindmapView(this.settings, preview, view);
       preview.open(mmPreview);
     }
 
     onunload() {
       console.log("Unloading Mind Map plugin");
     }
-
-    activeLeafPath(workspace: Workspace) {
-      return workspace.activeLeaf?.view.getState().file;
-    }
-
-    activeLeafName(workspace: Workspace) {
-      return workspace.activeLeaf?.getDisplayText();
-    }
-
-
-
 }

@@ -1,13 +1,13 @@
 import { Notice } from 'obsidian';
 
-export function copyImageToClipboard(svg: SVGElement) {
+export async function copyImageToClipboard(svg: SVGElement) {
     const canvas = createCanvas(svg);
-    const img = generateImage(svg, canvas, () => {
-        canvas.toBlob((blob: any) => {
-            const item = new ClipboardItem({ "image/png": blob });
-            navigator.clipboard.write([item]);
-            new Notice('Screenshot copied to the clipboard.')
-        });
+    generateImage(svg, canvas, async () => {
+        const blob : Blob | null = await new Promise(resolve => canvas.toBlob(resolve));
+        if (!blob) return;
+        const item = new ClipboardItem({ "image/png": blob });
+        await navigator.clipboard.write([item]);
+        new Notice('Screenshot copied to the clipboard.')
     });
 }
 
@@ -18,18 +18,32 @@ function createCanvas(svg: SVGElement): HTMLCanvasElement {
     return canvas;
 }
 
-function generateImage(svg: SVGElement, canvas: HTMLCanvasElement, callback: () => void): HTMLImageElement {
-    var ctx = canvas.getContext("2d");
-    return drawInlineSVG(ctx, svg, callback);
+function generateImage(svg: SVGElement, canvas: HTMLCanvasElement, callback: () => Promise<void>): HTMLImageElement | null {
+    let ctx = canvas.getContext("2d");
+    if (!ctx) console.warn("Invalid canvas context");
+    console.warn("Valid canvas context");
+    return ctx ? drawInlineSVG(ctx, svg, callback) : null;
 }
 
-function drawInlineSVG(ctx: CanvasRenderingContext2D, svg: SVGElement, callback: () => void): HTMLImageElement {
+function encodeXmlToBase64(xml: string): string {
+  // Encode the Unicode string into a UTF-8 Uint8Array
+  const bytes = new TextEncoder().encode(xml);
+
+  // Convert the bytes to a binary string
+  // Using Array.from is the MDN recommended approach
+  const binString = Array.from(bytes, (byte) => String.fromCodePoint(byte)).join("");
+
+  // Safely encode to Base64
+  return btoa(binString);
+}
+
+function drawInlineSVG(ctx: CanvasRenderingContext2D, svg: SVGElement, callback: () => Promise<void>): HTMLImageElement {
 
     // get svg data
     const xml = new XMLSerializer().serializeToString(svg);
 
     // make it base64
-    const svg64 = btoa(unescape(encodeURIComponent(xml)))
+    const svg64 = encodeXmlToBase64(xml);
 
     const b64Start = 'data:image/svg+xml;base64,';
 
@@ -38,10 +52,10 @@ function drawInlineSVG(ctx: CanvasRenderingContext2D, svg: SVGElement, callback:
 
     const img = new Image();
     // set it as the source of the img element
-    img.onload = function() {
+    img.onload = async function() {
         // draw the image onto the canvas
         ctx.drawImage(img, 0, 0);
-        callback();
+        await callback();
     }
     img.src = image64;
     return img;

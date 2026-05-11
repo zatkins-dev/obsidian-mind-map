@@ -19,66 +19,66 @@ export class MindMapSettingsTab extends PluginSettingTab {
         containerEl.empty();
 
         new Setting(containerEl)
-            .setName('Preview Split')
-            .setDesc('Split direction for the Mind Map Preview')
+            .setName('Preview split')
+            .setDesc('Split direction for the mind map preview')
             .addDropdown(dropDown =>
                 dropDown
                     .addOption('horizontal', 'Horizontal')
                     .addOption('vertical', 'Vertical')
                     .setValue(this.plugin.settings.splitDirection || 'horizontal')
-                    .onChange((value: string) => {
+                    .onChange(async (value: string) => {
                         this.plugin.settings.splitDirection = value as SplitDirection;
-                        this.plugin.saveData(this.plugin.settings);
+                        await this.plugin.saveData(this.plugin.settings);
                     }));
 
         new Setting(containerEl)
-            .setName('Node Min Height')
+            .setName('Node minimum height')
             .setDesc('Minimum height for the mind map nodes')
             .addText(text =>
                 text
                     .setValue(this.plugin.settings.nodeMinHeight?.toString())
                     .setPlaceholder('Example: 16')
-                    .onChange((value: string) => {
+                    .onChange(async(value: string) => {
                         this.plugin.settings.nodeMinHeight = Number.parseInt(value);
-                        this.plugin.saveData(this.plugin.settings);
+                        await this.plugin.saveData(this.plugin.settings);
                     }));
 
         new Setting(containerEl)
-            .setName('Node Text Line Height')
+            .setName('Node text line height')
             .setDesc('Line height for content in mind map nodes')
             .addText(text =>
                 text
                     .setValue(this.plugin.settings.lineHeight?.toString())
                     .setPlaceholder('Example: 1em')
-                    .onChange((value: string) => {
+                    .onChange(async(value: string) => {
                         this.plugin.settings.lineHeight = value;
-                        this.plugin.saveData(this.plugin.settings);
+                        await this.plugin.saveData(this.plugin.settings);
                     }));
 
 
         new Setting(containerEl)
-            .setName('Vertical Spacing')
+            .setName('Vertical spacing')
             .setDesc('Vertical spacing of the mind map nodes')
             .addText(text =>
                 text
                     .setValue(this.plugin.settings.spacingVertical?.toString())
                     .setPlaceholder('Example: 5')
-                    .onChange((value: string) => {
+                    .onChange(async(value: string) => {
                         this.plugin.settings.spacingVertical = Number.parseInt(value);
-                        this.plugin.saveData(this.plugin.settings);
+                        await this.plugin.saveData(this.plugin.settings);
                     }));
 
 
         new Setting(containerEl)
-            .setName('Horizontal Spacing')
+            .setName('Horizontal spacing')
             .setDesc('Horizontal spacing of the mind map nodes')
             .addText(text =>
                 text
                     .setValue(this.plugin.settings.spacingHorizontal?.toString())
                     .setPlaceholder('Example: 80')
-                    .onChange((value: string) => {
+                    .onChange(async (value: string) => {
                         this.plugin.settings.spacingHorizontal = Number.parseInt(value);
-                        this.plugin.saveData(this.plugin.settings);
+                        await this.plugin.saveData(this.plugin.settings);
                     }));
 
         new Setting(containerEl)
@@ -88,9 +88,9 @@ export class MindMapSettingsTab extends PluginSettingTab {
                 text
                     .setValue(this.plugin.settings.paddingX?.toString())
                     .setPlaceholder('Example: 8')
-                    .onChange((value: string) => {
+                    .onChange(async (value: string) => {
                         this.plugin.settings.paddingX = Number.parseInt(value);
-                        this.plugin.saveData(this.plugin.settings);
+                        await this.plugin.saveData(this.plugin.settings);
                     }));
     }
 }
