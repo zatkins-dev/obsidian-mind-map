@@ -12,11 +12,11 @@ export default class ObsidianMarkmap {
     updateInternalLinks(node: IPureNode) {
         this.replaceInternalLinks(node);
         if (node.children) {
-            node.children.forEach(n => this.updateInternalLinks(n));
+            node.children.forEach((n) => this.updateInternalLinks(n));
         }
     }
 
-    private replaceInternalLinks(node: IPureNode){
+    private replaceInternalLinks(node: IPureNode) {
         const matches = this.parseValue(node.content);
         for (let i = 0; i < matches.length; i++) {
             const match = matches[i];
@@ -25,7 +25,7 @@ export default class ObsidianMarkmap {
             const isWikiLink = match.groups['wikitext'];
             const linkText = isWikiLink ? match.groups['wikitext'] : match.groups['mdtext'];
             const linkPath = isWikiLink ? linkText : match.groups['mdpath'];
-            if(!linkPath || linkPath.startsWith('http')){
+            if (!linkPath || linkPath.startsWith('http')) {
                 continue;
             }
             const url = `obsidian://open?vault=${this.vaultName}&file=${isWikiLink ? encodeURI(getLinkpath(linkPath)) : linkPath}`;
@@ -35,13 +35,12 @@ export default class ObsidianMarkmap {
     }
 
     private parseValue(v: string) {
-        const matches : RegExpExecArray[] = [];
-        let match = INTERNAL_LINK_REGEX.exec(v)
+        const matches: RegExpExecArray[] = [];
+        let match = INTERNAL_LINK_REGEX.exec(v);
         while (match) {
             matches.push(match);
-            match = INTERNAL_LINK_REGEX.exec(v)
+            match = INTERNAL_LINK_REGEX.exec(v);
         }
         return matches;
     }
-
 }

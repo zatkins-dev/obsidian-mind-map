@@ -22,7 +22,7 @@ export default class MindmapView extends ItemView {
     pinAction: HTMLElement;
     settings: MindMapSettings;
     transformer: Transformer;
-    markmap: Markmap
+    markmap: Markmap;
 
     getViewType(): string {
         return MM_VIEW_TYPE;
@@ -33,33 +33,33 @@ export default class MindmapView extends ItemView {
     }
 
     getIcon() {
-        return "dot-network";
+        return 'dot-network';
     }
 
     onMoreOptionsMenu(menu: Menu) {
-        menu
-        .addItem((item: MenuItem) =>
+        menu.addItem((item: MenuItem) =>
             item
-            .setIcon('pin')
-            .setTitle('Pin')
-            .onClick(() => this.pinCurrentLeaf())
+                .setIcon('pin')
+                .setTitle('Pin')
+                .onClick(() => this.pinCurrentLeaf()),
         )
-        .addSeparator()
-        .addItem((item: MenuItem) =>
-            item
-            .setIcon('image-file')
-            .setTitle('Copy screenshot')
-            .onClick(() => copyImageToClipboard(this.svg))
-        ).addItem((item: MenuItem) =>
-            item
-            .setIcon('download')
-            .setTitle('Download SVG')
-            .onClick(() => saveSVG(this.svg))
-        );
-        menu.showAtPosition({x: 0, y: 0});
+            .addSeparator()
+            .addItem((item: MenuItem) =>
+                item
+                    .setIcon('image-file')
+                    .setTitle('Copy screenshot')
+                    .onClick(() => copyImageToClipboard(this.svg)),
+            )
+            .addItem((item: MenuItem) =>
+                item
+                    .setIcon('download')
+                    .setTitle('Download SVG')
+                    .onClick(() => saveSVG(this.svg)),
+            );
+        menu.showAtPosition({ x: 0, y: 0 });
     }
 
-    constructor(settings: MindMapSettings, leaf: WorkspaceLeaf, initialLinkedView: MarkdownView | null){
+    constructor(settings: MindMapSettings, leaf: WorkspaceLeaf, initialLinkedView: MarkdownView | null) {
         super(leaf);
         this.settings = settings;
         this.linkedView = initialLinkedView;
@@ -76,29 +76,33 @@ export default class MindmapView extends ItemView {
             this.workspace.on('resize', () => this.update()),
             this.workspace.on('css-change', () => this.update()),
             this.workspace.on('quick-preview', (file, data) => this.update()),
-            this.leaf.on('group-change', (group) => this.updateLinkedLeaf(group, this))
+            this.leaf.on('group-change', (group) => this.updateLinkedLeaf(group, this)),
         ];
     }
 
     async onClose() {
-        this.listeners.forEach(listener => this.workspace.offref(listener));
+        this.listeners.forEach((listener) => this.workspace.offref(listener));
     }
 
     async checkAndUpdate(view: MarkdownView | null) {
         if (this.isUpdateRequired(view)) {
-          this.linkedView = view;
-          await this.update();
+            this.linkedView = view;
+            await this.update();
         }
     }
 
     async updateActiveLeaf(leaf: WorkspaceLeaf | null) {
-      if (leaf && leaf.view instanceof MarkdownView) {
-        await this.checkAndUpdate(leaf.view);
-      }
+        if (leaf && leaf.view instanceof MarkdownView) {
+            await this.checkAndUpdate(leaf.view);
+        }
     }
 
     async updateLinkedLeaf(group: string, mmView: MindmapView) {
-        const view = group === null ? mmView.workspace.getGroupLeaves(group).filter(l => l.view.getViewType() === MM_VIEW_TYPE)[0]?.view as MarkdownView : null;
+        const view =
+            group === null
+                ? (mmView.workspace.getGroupLeaves(group).filter((l) => l.view.getViewType() === MM_VIEW_TYPE)[0]
+                      ?.view as MarkdownView)
+                : null;
         await this.checkAndUpdate(view);
     }
 
@@ -113,22 +117,29 @@ export default class MindmapView extends ItemView {
         if (this.pinAction) this.pinAction.parentNode?.removeChild(this.pinAction);
     }
 
-    async update () {
+    async update() {
         if (this.linkedView) {
-          const { root } = this.transformMarkdown(this.linkedView.data);
-          // this.displayEmpty(false);
-          if (!this.markmap) {
-            const {svg, markmap} = createSVG(this.markmapOptions(), root, this.containerEl, this.settings.lineHeight)
-            this.svg = svg;
-            if (markmap) this.markmap = markmap;
-          } else {
-            await this.markmap.setData(root);
-          }
-
+            const { root } = this.transformMarkdown(this.linkedView.data);
+            // this.displayEmpty(false);
+            if (!this.markmap) {
+                const { svg, markmap } = createSVG(
+                    this.markmapOptions(),
+                    root,
+                    this.containerEl,
+                    this.settings.lineHeight,
+                );
+                this.svg = svg;
+                if (markmap) this.markmap = markmap;
+            } else {
+                await this.markmap.setData(root);
+            }
         } else {
-          this.displayEmpty(true);
+            this.displayEmpty(true);
         }
-        this.displayText = this.linkedView != null && this.linkedView.file?.name ? `Mind Map of ${this.linkedView.file?.name}` : 'Mind Map';
+        this.displayText =
+            this.linkedView != null && this.linkedView.file?.name
+                ? `Mind Map of ${this.linkedView.file?.name}`
+                : 'Mind Map';
         this.load();
     }
 
@@ -146,14 +157,14 @@ export default class MindmapView extends ItemView {
     }
 
     markmapOptions = () => {
-      return {
-        autoFit: false,
-        duration: 10,
-        nodeMinHeight: this.settings.nodeMinHeight ?? 16,
-        spacingVertical: this.settings.spacingVertical ?? 5,
-        spacingHorizontal: this.settings.spacingHorizontal ?? 80,
-        paddingX: this.settings.paddingX ?? 8,
-      }
+        return {
+            autoFit: false,
+            duration: 10,
+            nodeMinHeight: this.settings.nodeMinHeight ?? 16,
+            spacingVertical: this.settings.spacingVertical ?? 5,
+            spacingHorizontal: this.settings.spacingHorizontal ?? 80,
+            paddingX: this.settings.paddingX ?? 8,
+        };
     };
 
     // renderMarkmap(root: IPureNode, svg: SVGElement) {
@@ -173,17 +184,17 @@ export default class MindmapView extends ItemView {
     // }
 
     displayEmpty(display: boolean) {
-        if(this.emptyDiv === undefined) {
-            const div = document.createElement('div')
+        if (this.emptyDiv === undefined) {
+            const div = document.createElement('div');
             div.className = 'pane-empty';
             div.innerText = 'No content found';
             this.emptyDiv = div;
         }
         if (display && this.containerEl.children[1] && this.containerEl.children[1].children[0]) {
-          this.containerEl.replaceChild(this.containerEl.children[1].children[0], this.emptyDiv);
-          this.emptyDiv.toggle(true)
+            this.containerEl.replaceChild(this.containerEl.children[1].children[0], this.emptyDiv);
+            this.emptyDiv.toggle(true);
         } else {
-          this.emptyDiv.toggle(false);
+            this.emptyDiv.toggle(false);
         }
     }
 }

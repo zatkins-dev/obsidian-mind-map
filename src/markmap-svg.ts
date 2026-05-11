@@ -1,7 +1,12 @@
 import { Markmap, IMarkmapOptions } from 'markmap-view';
 import { IPureNode } from 'markmap-common';
 
-export function createSVG(opts: Partial<IMarkmapOptions>, root: IPureNode, containerEl: HTMLElement, lineHeight: string) {
+export function createSVG(
+    opts: Partial<IMarkmapOptions>,
+    root: IPureNode,
+    containerEl: HTMLElement,
+    lineHeight: string,
+) {
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg') as unknown as SVGElement;
     svg.id = 'markmap';
     svg.setAttr('style', 'height: 100%; width: 100%;');
@@ -15,16 +20,16 @@ export function createSVG(opts: Partial<IMarkmapOptions>, root: IPureNode, conta
         line-height: ${lineHeight ?? '1em'};
     }`;
     svg.appendChild(style);
-    let markmap : Markmap | null = null;
+    let markmap: Markmap | null = null;
     try {
-       markmap = Markmap.create(svg, opts, root);
+        markmap = Markmap.create(svg, opts, root);
     } catch (error) {
         console.error(error);
     }
     if (container) {
-      container.replaceChildren(svg);
+        container.replaceChildren(svg);
     }
-    return {svg, markmap};
+    return { svg, markmap };
 }
 
 export function getComputedCss(el: HTMLElement) {
