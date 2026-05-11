@@ -3,10 +3,10 @@
 ![GitHub Workflow Status](https://img.shields.io/github/workflow/status/lynchjames/obsidian-mind-map/Release%20Build?logo=github&style=for-the-badge) ![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/lynchjames/obsidian-mind-map?style=for-the-badge&sort=semver)
 
 
-This repository contains a plugin for [Obsidian](https://obsidian.md/) for viewing Markdown notes as Mind Maps using [Markmap](https://markmap.js.org/). 
+This repository contains a plugin for [Obsidian](https://obsidian.md/) for viewing Markdown notes as Mind Maps using [Markmap](https://markmap.js.org/).
 
 A similar plugin is available for [Visual Studio Code](https://marketplace.visualstudio.com/items?itemName=gera2ld.markmap-vscode).
-    
+
 ## Features
 
 - Preview your current note as a Mind Map
@@ -39,7 +39,7 @@ Places a copy of the Mind Map SVG on your clipboard allowing you to paste it int
 
 Custom plugins are only available for Obsidian v0.9.7+.
 
-The current API of this repo targets Obsidian **v0.9.20**. 
+The current API of this repo targets Obsidian **v0.9.20**.
 
 ## Installing
 
@@ -48,7 +48,7 @@ As of version [0.9.7 of Obsidian](https://forum.obsidian.md/t/obsidian-release-v
 ## Manual installation
 
 1. Download the [latest release](https://github.com/lynchjames/obsidian-mind-map/releases/latest)
-1. Extract the obsidian-day-planner folder from the zip to your vault's plugins folder: `<vault>/.obsidian/plugins/`  
+1. Extract the obsidian-day-planner folder from the zip to your vault's plugins folder: `<vault>/.obsidian/plugins/`
 Note: On some machines the `.obsidian` folder may be hidden. On MacOS you should be able to press `Command+Shift+Dot` to show the folder in Finder.
 1. Reload Obsidian
 1. If prompted about Safe Mode, you can disable safe mode and enable the plugin.

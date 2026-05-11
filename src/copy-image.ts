@@ -1,11 +1,11 @@
 import { Notice } from 'obsidian';
 
 export function copyImageToClipboard(svg: SVGElement) {
-    const canvas = createCanvas(svg); 
-    const img = generateImage(svg, canvas, () => { 
-        canvas.toBlob((blob: any) => { 
+    const canvas = createCanvas(svg);
+    const img = generateImage(svg, canvas, () => {
+        canvas.toBlob((blob: any) => {
             const item = new ClipboardItem({ "image/png": blob });
-            navigator.clipboard.write([item]); 
+            navigator.clipboard.write([item]);
             new Notice('Screenshot copied to the clipboard.')
         });
     });

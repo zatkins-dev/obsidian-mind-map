@@ -1,14 +1,14 @@
 # Contributing
 
-When contributing to this repository, please first discuss the change you wish to make via an [issue](https://github.com/lynchjames/obsidian-mind-map/issues), or with the maintainer on the [Obsidian Forum](https://forum.obsidian.md/u/j_l/summary) before making a change. 
+When contributing to this repository, please first discuss the change you wish to make via an [issue](https://github.com/lynchjames/obsidian-mind-map/issues), or with the maintainer on the [Obsidian Forum](https://forum.obsidian.md/u/j_l/summary) before making a change.
 
 I have included a code of conduct, please follow it in all your interactions with the development of this plugin.
 
 ## Pull Request Process
 
-1. Ensure any install or build dependencies are removed before the end of the layer when doing a 
+1. Ensure any install or build dependencies are removed before the end of the layer when doing a
    build.
-2. Where appropriate, update the README.md with details of changes to the plugin, this includes additions and changes to configuration  
+2. Where appropriate, update the README.md with details of changes to the plugin, this includes additions and changes to configuration
    settings, plugin commands, useful file locations and additional installation instructions.
 3. If you can, please include tests in your Pull Request, particularly if you are making significant changes or additions to the behaviour of the plugin.
 4. A CI Test Github Action workflow will run when a new Pull Request is made. The Pull Request cannot be completed until that workflow is passing with the plugin successfully building and all tests passing.

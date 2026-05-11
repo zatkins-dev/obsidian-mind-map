@@ -2,20 +2,20 @@ import {
     Plugin,
     Vault,
     Workspace,
-    WorkspaceLeaf, 
+    WorkspaceLeaf,
   } from 'obsidian';
 import MindmapView from './mindmap-view';
 import { MM_VIEW_TYPE } from './constants';
 import { MindMapSettings } from './settings';
 import { MindMapSettingsTab } from './settings-tab';
 
-  
+
   export default class MindMap extends Plugin {
     vault: Vault;
     workspace: Workspace;
     mindmapView: MindmapView;
     settings: MindMapSettings;
-    
+
     async onload() {
       console.log("Loading Mind Map plugin");
       this.vault = this.app.vault;
@@ -34,7 +34,7 @@ import { MindMapSettingsTab } from './settings-tab';
         (leaf: WorkspaceLeaf) =>
           (this.mindmapView = new MindmapView(this.settings, leaf, {path:this.activeLeafPath(this.workspace), basename: this.activeLeafName(this.workspace)}))
       );
-      
+
       this.addCommand({
         id: 'app:markmap-preview',
         name: 'Preview the current note as a Mind Map',
@@ -59,7 +59,7 @@ import { MindMapSettingsTab } from './settings-tab';
       const mmPreview = new MindmapView(this.settings, preview, fileInfo);
       preview.open(mmPreview);
     }
-      
+
     onunload() {
       console.log("Unloading Mind Map plugin");
     }

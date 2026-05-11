@@ -37,20 +37,20 @@ export default class MindmapView extends ItemView {
         return "dot-network";
     }
 
-    onMoreOptionsMenu(menu: Menu) {    
+    onMoreOptionsMenu(menu: Menu) {
         menu
-        .addItem((item) => 
+        .addItem((item) =>
             item
             .setIcon('pin')
             .setTitle('Pin')
             .onClick(() => this.pinCurrentLeaf())
         )
         .addSeparator()
-        .addItem((item) => 
+        .addItem((item) =>
             item
             .setIcon('image-file')
             .setTitle('Copy screenshot')
-            .onClick(() => copyImageToClipboard(this.svg))  
+            .onClick(() => copyImageToClipboard(this.svg))
         );
         menu.showAtPosition({x: 0, y: 0});
     }
@@ -59,7 +59,7 @@ export default class MindmapView extends ItemView {
         super(leaf);
         this.settings = settings;
         this.filePath = initialFileInfo.path;
-        this.fileName = initialFileInfo.basename; 
+        this.fileName = initialFileInfo.basename;
         this.vault = this.app.vault;
         this.workspace = this.app.workspace;
     }
@@ -84,7 +84,7 @@ export default class MindmapView extends ItemView {
             window.setInterval(() => this.checkAndUpdate(), 1000)
         );
     }
-    
+
     async checkAndUpdate() {
         try {
             if(await this.checkActiveLeaf()) {
@@ -129,7 +129,7 @@ export default class MindmapView extends ItemView {
                 this.renderMarkmap(root, this.svg);
             }
         }
-        this.displayText = this.fileName != undefined ? `Mind Map of ${this.fileName}` : 'Mind Map'; 
+        this.displayText = this.fileName != undefined ? `Mind Map of ${this.fileName}` : 'Mind Map';
         this.load();
     }
 
@@ -150,7 +150,7 @@ export default class MindmapView extends ItemView {
         this.fileName = fileInfo.basename;
         return pathHasChanged;
     }
-    
+
     getLeafTarget() {
         if(!this.isLeafPinned){
             this.linkedLeaf = this.app.workspace.activeLeaf;
@@ -167,13 +167,13 @@ export default class MindmapView extends ItemView {
         this.currentMd = md;
         return markDownHasChanged;
     }
-    
+
     async transformMarkdown() {
         const { root, features } = transform(this.currentMd);
         this.obsMarkmap.updateInternalLinks(root);
         return { root, features };
     }
-    
+
     async renderMarkmap(root: INode, svg: SVGElement) {
         const { font } = getComputedCss(this.containerEl);
         const options: IMarkmapOptions = {
@@ -200,7 +200,7 @@ export default class MindmapView extends ItemView {
             removeExistingSVG();
             this.containerEl.children[1].appendChild(div);
             this.emptyDiv = div;
-        } 
+        }
         this.emptyDiv.toggle(display);
     }
 }
