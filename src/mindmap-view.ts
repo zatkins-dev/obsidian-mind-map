@@ -1,18 +1,15 @@
-import { EventRef, ItemView, Menu, Vault, Workspace, WorkspaceLeaf } from 'obsidian';
-import { transform } from 'markmap-lib';
-import { Markmap } from 'markmap-view';
-import { INode } from 'markmap-common';
-import { FRONT_MATTER_REGEX, MD_VIEW_TYPE, MM_VIEW_TYPE } from './constants';
+import { EventRef, ItemView, MarkdownView, Menu, MenuItem, Vault, Workspace, WorkspaceLeaf } from 'obsidian';
+import { Transformer } from 'markmap-lib';
+import { FRONT_MATTER_REGEX, MM_VIEW_TYPE } from './constants';
 import ObsidianMarkmap from './obsidian-markmap-plugin';
-import { createSVG, getComputedCss, removeExistingSVG } from './markmap-svg';
+import { createSVG } from './markmap-svg';
 import { copyImageToClipboard } from './copy-image';
+import { saveSVG } from './save-svg';
 import { MindMapSettings } from './settings';
-import { IMarkmapOptions } from 'markmap-view/types/types';
+import { Markmap } from 'markmap-view';
 
 export default class MindmapView extends ItemView {
-    filePath: string;
-    fileName: string;
-    linkedLeaf: WorkspaceLeaf;
+    linkedView: MarkdownView | null;
     displayText: string;
     currentMd: string;
     vault: Vault;
@@ -24,6 +21,8 @@ export default class MindmapView extends ItemView {
     isLeafPinned: boolean;
     pinAction: HTMLElement;
     settings: MindMapSettings;
+    transformer: Transformer;
+    markmap: Markmap;
 
     getViewType(): string {
         return MM_VIEW_TYPE;
@@ -34,173 +33,168 @@ export default class MindmapView extends ItemView {
     }
 
     getIcon() {
-        return "dot-network";
+        return 'dot-network';
     }
 
-    onMoreOptionsMenu(menu: Menu) {    
-        menu
-        .addItem((item) => 
+    onMoreOptionsMenu(menu: Menu) {
+        menu.addItem((item: MenuItem) =>
             item
-            .setIcon('pin')
-            .setTitle('Pin')
-            .onClick(() => this.pinCurrentLeaf())
+                .setIcon('pin')
+                .setTitle('Pin')
+                .onClick(() => this.pinCurrentLeaf()),
         )
-        .addSeparator()
-        .addItem((item) => 
-            item
-            .setIcon('image-file')
-            .setTitle('Copy screenshot')
-            .onClick(() => copyImageToClipboard(this.svg))  
-        );
-        menu.showAtPosition({x: 0, y: 0});
+            .addSeparator()
+            .addItem((item: MenuItem) =>
+                item
+                    .setIcon('image-file')
+                    .setTitle('Copy screenshot')
+                    .onClick(() => copyImageToClipboard(this.svg)),
+            )
+            .addItem((item: MenuItem) =>
+                item
+                    .setIcon('download')
+                    .setTitle('Download SVG')
+                    .onClick(() => saveSVG(this.svg)),
+            );
+        menu.showAtPosition({ x: 0, y: 0 });
     }
 
-    constructor(settings: MindMapSettings, leaf: WorkspaceLeaf, initialFileInfo: {path:string, basename:string}){
+    constructor(settings: MindMapSettings, leaf: WorkspaceLeaf, initialLinkedView: MarkdownView | null) {
         super(leaf);
         this.settings = settings;
-        this.filePath = initialFileInfo.path;
-        this.fileName = initialFileInfo.basename; 
+        this.linkedView = initialLinkedView;
         this.vault = this.app.vault;
         this.workspace = this.app.workspace;
+        this.transformer = new Transformer();
     }
 
     async onOpen() {
         this.obsMarkmap = new ObsidianMarkmap(this.vault);
-        this.registerActiveLeafUpdate();
         this.listeners = [
-            this.workspace.on('layout-ready', () => this.update()),
+            this.workspace.on('active-leaf-change', (leaf) => this.updateActiveLeaf(leaf)),
+            this.workspace.on('layout-change', () => this.update()),
             this.workspace.on('resize', () => this.update()),
             this.workspace.on('css-change', () => this.update()),
-            this.leaf.on('group-change', (group) => this.updateLinkedLeaf(group, this))
+            this.workspace.on('quick-preview', (file, data) => this.update()),
+            this.leaf.on('group-change', (group) => this.updateLinkedLeaf(group, this)),
         ];
     }
 
     async onClose() {
-        this.listeners.forEach(listener => this.workspace.offref(listener));
+        this.listeners.forEach((listener) => this.workspace.offref(listener));
     }
 
-    registerActiveLeafUpdate() {
-        this.registerInterval(
-            window.setInterval(() => this.checkAndUpdate(), 1000)
-        );
-    }
-    
-    async checkAndUpdate() {
-        try {
-            if(await this.checkActiveLeaf()) {
-                this.update();
-            }
-        } catch (error) {
-            console.error(error)
+    async checkAndUpdate(view: MarkdownView | null) {
+        if (this.isUpdateRequired(view)) {
+            this.linkedView = view;
+            await this.update();
         }
     }
 
-    updateLinkedLeaf(group: string, mmView: MindmapView) {
-        if(group === null) {
-            mmView.linkedLeaf = undefined;
-            return;
+    async updateActiveLeaf(leaf: WorkspaceLeaf | null) {
+        if (leaf && leaf.view instanceof MarkdownView) {
+            await this.checkAndUpdate(leaf.view);
         }
-        const mdLinkedLeaf = mmView.workspace.getGroupLeaves(group).filter(l => l.view.getViewType() === MM_VIEW_TYPE)[0];
-        mmView.linkedLeaf = mdLinkedLeaf;
-        this.checkAndUpdate();
+    }
+
+    async updateLinkedLeaf(group: string, mmView: MindmapView) {
+        const view =
+            group === null
+                ? (mmView.workspace.getGroupLeaves(group).filter((l) => l.view.getViewType() === MM_VIEW_TYPE)[0]
+                      ?.view as MarkdownView)
+                : null;
+        await this.checkAndUpdate(view);
     }
 
     pinCurrentLeaf() {
         this.isLeafPinned = true;
-        this.pinAction = this.addAction('filled-pin', 'Pin', () => this.unPin(), 20);
+        this.pinAction = this.addAction('filled-pin', 'Pin', () => this.unPin());
         this.pinAction.addClass('is-active');
     }
 
     unPin() {
         this.isLeafPinned = false;
-        this.pinAction.parentNode.removeChild(this.pinAction);
+        if (this.pinAction) this.pinAction.parentNode?.removeChild(this.pinAction);
     }
 
-    async update(){
-        if(this.filePath) {
-            await this.readMarkDown();
-            if(this.currentMd.length === 0 || this.getLeafTarget().view.getViewType() != MD_VIEW_TYPE){
-                this.displayEmpty(true);
-                removeExistingSVG();
+    async update() {
+        if (this.linkedView) {
+            const { root } = this.transformMarkdown(this.linkedView.data);
+            // this.displayEmpty(false);
+            if (!this.markmap) {
+                const { svg, markmap } = createSVG(
+                    this.markmapOptions(),
+                    root,
+                    this.containerEl,
+                    this.settings.lineHeight,
+                );
+                this.svg = svg;
+                if (markmap) this.markmap = markmap;
             } else {
-                const { root, features } = await this.transformMarkdown();
-                this.displayEmpty(false);
-                this.svg = createSVG(this.containerEl, this.settings.lineHeight);
-                this.renderMarkmap(root, this.svg);
+                await this.markmap.setData(root);
             }
+        } else {
+            this.displayEmpty(true);
         }
-        this.displayText = this.fileName != undefined ? `Mind Map of ${this.fileName}` : 'Mind Map'; 
+        this.displayText =
+            this.linkedView != null && this.linkedView.file?.name
+                ? `Mind Map of ${this.linkedView.file?.name}`
+                : 'Mind Map';
         this.load();
     }
 
-    async checkActiveLeaf() {
-        if(this.app.workspace.activeLeaf.view.getViewType() === MM_VIEW_TYPE){
-            return false;
-        }
-        const pathHasChanged = this.readFilePath();
-        const markDownHasChanged = await this.readMarkDown();
-        const updateRequired = pathHasChanged || markDownHasChanged;
-        return updateRequired;
+    isUpdateRequired(view: MarkdownView | null) {
+        if (this.isLeafPinned && view !== this.linkedView) return false;
+        if (view !== this.linkedView) return true;
+        if (!view) return false;
+        return view.data == this.linkedView?.data;
     }
 
-    readFilePath() {
-        const fileInfo = (this.getLeafTarget().view as any).file;
-        const pathHasChanged = this.filePath != fileInfo.path;
-        this.filePath = fileInfo.path;
-        this.fileName = fileInfo.basename;
-        return pathHasChanged;
-    }
-    
-    getLeafTarget() {
-        if(!this.isLeafPinned){
-            this.linkedLeaf = this.app.workspace.activeLeaf;
-        }
-        return this.linkedLeaf != undefined ? this.linkedLeaf : this.app.workspace.activeLeaf;
-    }
-
-    async readMarkDown() {
-        let md = await this.app.vault.adapter.read(this.filePath);
-        if(md.startsWith('---')) {
-            md = md.replace(FRONT_MATTER_REGEX, '');
-        }
-        const markDownHasChanged = this.currentMd != md;
-        this.currentMd = md;
-        return markDownHasChanged;
-    }
-    
-    async transformMarkdown() {
-        const { root, features } = transform(this.currentMd);
+    transformMarkdown(md: string) {
+        const { root, features } = this.transformer.transform(md.replace(FRONT_MATTER_REGEX, ''));
         this.obsMarkmap.updateInternalLinks(root);
         return { root, features };
     }
-    
-    async renderMarkmap(root: INode, svg: SVGElement) {
-        const { font } = getComputedCss(this.containerEl);
-        const options: IMarkmapOptions = {
+
+    markmapOptions = () => {
+        return {
             autoFit: false,
             duration: 10,
-            nodeFont: font,
             nodeMinHeight: this.settings.nodeMinHeight ?? 16,
             spacingVertical: this.settings.spacingVertical ?? 5,
             spacingHorizontal: this.settings.spacingHorizontal ?? 80,
-            paddingX: this.settings.paddingX ?? 8
-          };
-          try {
-            const markmapSVG = Markmap.create(svg, options, root);
-          } catch (error) {
-              console.error(error);
-          }
-    }
+            paddingX: this.settings.paddingX ?? 8,
+        };
+    };
+
+    // renderMarkmap(root: IPureNode, svg: SVGElement) {
+    //     const opt = deriveOptions({
+    //       duration: 10,
+    //       nodeMinHeight: this.settings.nodeMinHeight ?? 16,
+    //       spacingVertical: this.settings.spacingVertical ?? 5,
+    //       spacingHorizontal: this.settings.spacingHorizontal ?? 80,
+    //       paddingX: this.settings.paddingX ?? 8,
+    //     });
+    //     opt.autoFit = false;
+    //     try {
+    //       const markmapSVG = Markmap.create(svg, opt, root);
+    //     } catch (error) {
+    //         console.error(error);
+    //     }
+    // }
 
     displayEmpty(display: boolean) {
-        if(this.emptyDiv === undefined) {
-            const div = document.createElement('div')
+        if (this.emptyDiv === undefined) {
+            const div = document.createElement('div');
             div.className = 'pane-empty';
             div.innerText = 'No content found';
-            removeExistingSVG();
-            this.containerEl.children[1].appendChild(div);
             this.emptyDiv = div;
-        } 
-        this.emptyDiv.toggle(display);
+        }
+        if (display && this.containerEl.children[1] && this.containerEl.children[1].children[0]) {
+            this.containerEl.replaceChild(this.containerEl.children[1].children[0], this.emptyDiv);
+            this.emptyDiv.toggle(true);
+        } else {
+            this.emptyDiv.toggle(false);
+        }
     }
 }

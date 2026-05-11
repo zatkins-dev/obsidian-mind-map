@@ -1,4 +1,4 @@
-import { INode } from 'markmap-common';
+import { IPureNode } from 'markmap-common';
 import { getLinkpath, Vault } from 'obsidian';
 import { INTERNAL_LINK_REGEX } from './constants';
 
@@ -9,36 +9,38 @@ export default class ObsidianMarkmap {
         this.vaultName = vault.getName();
     }
 
-    updateInternalLinks(node: INode) {
+    updateInternalLinks(node: IPureNode) {
         this.replaceInternalLinks(node);
-        if(node.c){
-            node.c.forEach(n => this.updateInternalLinks(n));
+        if (node.children) {
+            node.children.forEach((n) => this.updateInternalLinks(n));
         }
     }
 
-    private replaceInternalLinks(node: INode){
-        const matches = this.parseValue(node.v);
+    private replaceInternalLinks(node: IPureNode) {
+        const matches = this.parseValue(node.content);
         for (let i = 0; i < matches.length; i++) {
             const match = matches[i];
+            if (!match) continue;
+            if (!match.groups) continue;
             const isWikiLink = match.groups['wikitext'];
             const linkText = isWikiLink ? match.groups['wikitext'] : match.groups['mdtext'];
             const linkPath = isWikiLink ? linkText : match.groups['mdpath'];
-            if(linkPath.startsWith('http')){
+            if (!linkPath || linkPath.startsWith('http')) {
                 continue;
             }
             const url = `obsidian://open?vault=${this.vaultName}&file=${isWikiLink ? encodeURI(getLinkpath(linkPath)) : linkPath}`;
-            const link = `<a href=\"${url}\">${linkText}</a>`;
-            node.v = node.v.replace(match[0], link);
+            const link = `<a href="${url}">${linkText}</a>`;
+            node.content = node.content.replace(match[0], link);
         }
     }
 
     private parseValue(v: string) {
-        const matches = [];
-        let match;
-        while(match = INTERNAL_LINK_REGEX.exec(v)){
+        const matches: RegExpExecArray[] = [];
+        let match = INTERNAL_LINK_REGEX.exec(v);
+        while (match) {
             matches.push(match);
+            match = INTERNAL_LINK_REGEX.exec(v);
         }
         return matches;
     }
-
 }
